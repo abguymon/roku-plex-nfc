@@ -118,6 +118,11 @@ Edit the service file if your install path or username differs from the defaults
 - The Roku's Plex companion port (8324) doesn't respond while the screensaver is active, so the daemon wakes the Roku first
 - NFC reads are debounced — tapping the same card again within 5 seconds (configurable) is ignored, but removing and re-tapping works immediately
 
+## Roadmap
+
+- **Card scan feedback** — audible buzzer and/or LED blink when a card is read, so you know the tap registered before the TV responds
+- **Multi-platform deep links** — support launching content on other Roku apps (Netflix, Disney+, YouTube) in addition to Plex
+
 ## License
 
 MIT

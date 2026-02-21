@@ -1,0 +1,16 @@
+[project]
+name = "roku-plex-nfc"
+version = "0.1.0"
+description = "Tap an NFC card, play a movie or TV show on your Roku via Plex"
+authors = [{ name = "Adam Guymon" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "plexapi>=4.18.0",
+    "pyyaml>=6.0.3",
+    "requests>=2.32.5",
+]
+
+[project.urls]
+Repository = "https://github.com/adamguymon/roku-plex-nfc"

@@ -1,0 +1,15 @@
+[Unit]
+Description=NFC-TV: NFC-triggered Plex playback
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/nfc-tv
+ExecStart=/home/pi/nfc-tv/.venv/bin/python -m nfc_tv.daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

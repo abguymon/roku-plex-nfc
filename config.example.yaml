@@ -1,0 +1,30 @@
+roku:
+  host: "192.168.0.139"
+  plex_app_id: "13535"
+
+plex:
+  host: "192.168.0.140"
+  port: 32400
+  token: "YOUR_PLEX_TOKEN"
+  machine_id: "YOUR_PLEX_MACHINE_ID"
+
+companion:
+  port: 8324
+  target_client_id: "YOUR_ROKU_CLIENT_ID"
+  client_id: "nfc-tv-controller"
+  device_name: "NFC-TV"
+
+nfc:
+  interface: "spi"
+  debounce_seconds: 5
+
+cards:
+  "04a23b1c":
+    type: "movie"
+    title: "Cars"
+    library: "Movies"
+  "04b7ce2d":
+    type: "show"
+    title: "The Office"
+    library: "TV Shows"
+    mode: "next"

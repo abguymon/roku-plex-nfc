@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — NFC-TV{% endblock %}
+
+{% block content %}
+<h2>Dashboard</h2>
+
+<div class="grid">
+    <article id="nfc-status">
+        <header>NFC Reader</header>
+        <p id="nfc-text">Checking...</p>
+    </article>
+    <article id="plex-status">
+        <header>Plex Server</header>
+        <p id="plex-text">Checking...</p>
+    </article>
+    <article id="roku-status">
+        <header>Roku</header>
+        <p id="roku-text">Checking...</p>
+    </article>
+</div>
+
+<h3>Recent Scans</h3>
+<figure>
+    <table id="events-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>UID</th>
+                <th>Title</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="events-body">
+            <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+    </table>
+</figure>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setStatus(elementId, textId, ok) {
+    const el = document.getElementById(elementId);
+    const text = document.getElementById(textId);
+    el.className = ok ? 'status-ok' : 'status-err';
+    text.textContent = ok ? 'Connected' : 'Unavailable';
+}
+
+async function refreshStatus() {
+    try {
+        const resp = await fetch('/api/status');
+        const data = await resp.json();
+        setStatus('nfc-status', 'nfc-text', data.nfc_reader.connected);
+        setStatus('plex-status', 'plex-text', data.plex.reachable);
+        setStatus('roku-status', 'roku-text', data.roku.reachable);
+    } catch {
+        // Ignore fetch errors
+    }
+}
+
+async function refreshEvents() {
+    try {
+        const resp = await fetch('/api/events');
+        const events = await resp.json();
+        const tbody = document.getElementById('events-body');
+        if (events.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No scans yet</td></tr>';
+            return;
+        }
+        tbody.innerHTML = events.map(e => {
+            const time = new Date(e.timestamp * 1000).toLocaleTimeString();
+            const status = e.success ? 'OK' : 'Failed';
+            return `<tr>
+                <td>${time}</td>
+                <td><code>${e.uid}</code></td>
+                <td>${e.title || 'Unknown'}</td>
+                <td>${status}</td>
+            </tr>`;
+        }).join('');
+    } catch {
+        // Ignore fetch errors
+    }
+}
+
+refreshStatus();
+refreshEvents();
+setInterval(refreshStatus, 15000);
+setInterval(refreshEvents, 5000);
+</script>
+{% endblock %}

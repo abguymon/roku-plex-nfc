@@ -24,7 +24,7 @@ Inspired by [this project](https://simplyexplained.com/blog/how-i-built-an-nfc-m
 ### Install
 
 ```bash
-git clone https://github.com/adamgravois/roku-plex-nfc.git
+git clone https://github.com/abguymon/roku-plex-nfc.git
 cd roku-plex-nfc
 uv sync
 ```
@@ -51,7 +51,11 @@ You'll need:
 
 ### Register Cards
 
-Tap a card, search for content on your Plex server, and save the mapping:
+You can register cards via the **web UI** or the **CLI**.
+
+**Web UI** — navigate to the Register page and follow the 3-step flow (tap card, search Plex, save).
+
+**CLI** — tap a card, search for content, and save the mapping interactively:
 
 ```bash
 uv run python -m nfc_tv.register
@@ -80,17 +84,71 @@ cards:
 
 ## Usage
 
-### Run the Daemon
+### Run (Web UI + NFC Daemon)
 
 ```bash
-uv run python -m nfc_tv.daemon
+uv run python -m nfc_tv
 ```
 
-Tap a registered card and playback starts on your Roku.
+This starts a FastAPI web server on port 8000 with the NFC daemon running in a background thread. The web UI provides:
+
+- **Dashboard** (`/`) — live status of NFC reader, Plex server, and Roku, plus recent scan history
+- **Cards** (`/cards`) — view and delete registered card mappings
+- **Register** (`/register`) — 3-step card registration flow (tap → search → save)
+
+The host and port can be configured in `config.yaml`:
+
+```yaml
+web:
+  host: "0.0.0.0"
+  port: 8000
+```
+
+Or via CLI flags:
+
+```bash
+uv run python -m nfc_tv --host 0.0.0.0 --port 8080
+```
+
+### Run NFC Daemon Only (No Web UI)
+
+```bash
+uv run python -m nfc_tv --no-web
+```
+
+### Health Endpoint
+
+`GET /health` returns `200` when all systems are up, or `503` when degraded:
+
+```json
+{
+  "status": "healthy",
+  "nfc_reader": true,
+  "plex": true,
+  "roku": true
+}
+```
+
+Compatible with [Uptime Kuma](https://github.com/louislam/uptime-kuma) — use an HTTP keyword monitor checking for `healthy`.
+
+### API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check (200/503) |
+| `/api/status` | GET | Full system status |
+| `/api/events` | GET | Recent scan events |
+| `/api/cards` | GET | List registered cards |
+| `/api/cards` | POST | Register a card |
+| `/api/cards/{uid}` | DELETE | Delete a card |
+| `/api/cards/scan` | POST | Long-poll for card tap (30s timeout) |
+| `/api/plex/search?q=` | GET | Search Plex library |
 
 ### Test Without NFC Hardware
 
-You can test Plex + Roku playback from any machine on your network:
+The web UI works without NFC hardware — the reader will show as unavailable on the dashboard, but you can still browse cards and search Plex.
+
+You can also test Plex + Roku playback directly from any machine:
 
 ```bash
 # Play a movie
@@ -110,13 +168,14 @@ sudo cp nfc-tv.service /etc/systemd/system/
 sudo systemctl enable --now nfc-tv
 ```
 
-Edit the service file if your install path or username differs from the defaults.
+The service starts the web UI + daemon by default. Edit the service file if your install path or username differs from the defaults.
 
 ## Notes
 
 - Content is identified by **title + library name**, which survives Plex library rebuilds (unlike rating keys)
 - The Roku's Plex companion port (8324) doesn't respond while the screensaver is active, so the daemon wakes the Roku first
 - NFC reads are debounced — tapping the same card again within 5 seconds (configurable) is ignored, but removing and re-tapping works immediately
+- The NFC reader gracefully degrades — if hardware isn't available (e.g., running on a dev machine), the web UI still works
 
 ## Roadmap
 

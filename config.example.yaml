@@ -15,8 +15,12 @@ companion:
   device_name: "NFC-TV"
 
 nfc:
-  interface: "spi"
+  interface: "i2c"
   debounce_seconds: 5
+
+web:
+  host: "0.0.0.0"
+  port: 8000
 
 cards:
   "04a23b1c":

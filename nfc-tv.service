@@ -7,7 +7,8 @@ Wants=network-online.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/nfc-tv
-ExecStart=/home/pi/nfc-tv/.venv/bin/python -m nfc_tv.daemon
+ExecStart=/home/pi/nfc-tv/.venv/bin/python -m nfc_tv
+Environment=PYTHONUNBUFFERED=1
 Restart=on-failure
 RestartSec=5
 

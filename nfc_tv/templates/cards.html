@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Cards — NFC-TV{% endblock %}
+
+{% block content %}
+<h2>Registered Cards</h2>
+
+{% if cards %}
+<figure>
+    <table>
+        <thead>
+            <tr>
+                <th>UID</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Library</th>
+                <th>Mode</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for card in cards %}
+            <tr id="card-{{ card.uid }}">
+                <td><code>{{ card.uid }}</code></td>
+                <td>{{ card.title }}</td>
+                <td>{{ card.type }}</td>
+                <td>{{ card.library }}</td>
+                <td>{{ card.get('mode', '—') }}</td>
+                <td>
+                    <button class="secondary outline delete-btn" data-uid="{{ card.uid }}">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</figure>
+{% else %}
+<p>No cards registered. <a href="/register">Register one</a>.</p>
+{% endif %}
+
+<a href="/register" role="button">Register New Card</a>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const uid = btn.dataset.uid;
+        if (!confirm(`Delete card ${uid}?`)) return;
+        btn.ariaBusy = 'true';
+        try {
+            const resp = await fetch(`/api/cards/${uid}`, { method: 'DELETE' });
+            if (resp.ok) {
+                document.getElementById(`card-${uid}`).remove();
+            } else {
+                alert('Failed to delete card');
+            }
+        } finally {
+            btn.ariaBusy = 'false';
+        }
+    });
+});
+</script>
+{% endblock %}

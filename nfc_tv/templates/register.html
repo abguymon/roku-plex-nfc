@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Register Card — NFC-TV{% endblock %}
+
+{% block content %}
+<h2>Register Card</h2>
+
+<!-- Step 1: Tap card -->
+<article id="step-scan">
+    <header>Step 1: Tap a card on the reader</header>
+    <p id="scan-status">Press the button to start scanning.</p>
+    <button id="scan-btn" onclick="startScan()">Start Scanning</button>
+</article>
+
+<!-- Step 2: Search Plex -->
+<article id="step-search" hidden>
+    <header>Step 2: Search for content</header>
+    <p>Card UID: <code id="scanned-uid"></code></p>
+    <form onsubmit="searchPlex(event)">
+        <fieldset role="group">
+            <input type="text" id="search-input" placeholder="Search movies & shows..." required>
+            <button type="submit" id="search-btn">Search</button>
+        </fieldset>
+    </form>
+    <div id="search-results"></div>
+</article>
+
+<!-- Step 3: Configure & save -->
+<article id="step-save" hidden>
+    <header>Step 3: Configure & Save</header>
+    <p>Card <code id="save-uid"></code> → <strong id="save-title"></strong></p>
+    <div id="mode-picker" hidden>
+        <label>Playback mode</label>
+        <select id="mode-select">
+            <option value="next">Next unwatched episode</option>
+            <option value="shuffle">Shuffle all episodes</option>
+        </select>
+    </div>
+    <button id="save-btn" onclick="saveCard()">Save</button>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cardUid = null;
+let selectedItem = null;
+
+async function startScan() {
+    const btn = document.getElementById('scan-btn');
+    const status = document.getElementById('scan-status');
+    btn.ariaBusy = 'true';
+    btn.disabled = true;
+    status.textContent = 'Waiting for card tap... (30s timeout)';
+
+    try {
+        const resp = await fetch('/api/cards/scan', { method: 'POST' });
+        if (resp.ok) {
+            const data = await resp.json();
+            cardUid = data.uid;
+            document.getElementById('scanned-uid').textContent = cardUid;
+            document.getElementById('step-scan').hidden = true;
+            document.getElementById('step-search').hidden = false;
+            document.getElementById('search-input').focus();
+        } else {
+            const err = await resp.json();
+            status.textContent = err.error || 'Scan failed';
+        }
+    } catch {
+        status.textContent = 'Connection error';
+    } finally {
+        btn.ariaBusy = 'false';
+        btn.disabled = false;
+    }
+}
+
+async function searchPlex(e) {
+    e.preventDefault();
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) return;
+
+    const btn = document.getElementById('search-btn');
+    btn.ariaBusy = 'true';
+
+    try {
+        const resp = await fetch(`/api/plex/search?q=${encodeURIComponent(query)}`);
+        const results = await resp.json();
+        const container = document.getElementById('search-results');
+
+        if (results.length === 0) {
+            container.innerHTML = '<p>No results found.</p>';
+            return;
+        }
+
+        container.innerHTML = results.map((item, i) => {
+            const detail = item.type === 'show'
+                ? `${item.episodes} episodes`
+                : (item.year || '');
+            return `<article class="search-result" onclick="selectItem(${i})" data-index="${i}">
+                <strong>${item.title}</strong>
+                <small>${item.library} · ${item.type} · ${detail}</small>
+            </article>`;
+        }).join('');
+
+        window._searchResults = results;
+    } catch {
+        document.getElementById('search-results').innerHTML = '<p>Search failed.</p>';
+    } finally {
+        btn.ariaBusy = 'false';
+    }
+}
+
+function selectItem(index) {
+    selectedItem = window._searchResults[index];
+    document.getElementById('save-uid').textContent = cardUid;
+    document.getElementById('save-title').textContent =
+        `${selectedItem.title} (${selectedItem.type})`;
+
+    const modePicker = document.getElementById('mode-picker');
+    modePicker.hidden = selectedItem.type !== 'show';
+
+    document.getElementById('step-search').hidden = true;
+    document.getElementById('step-save').hidden = false;
+}
+
+async function saveCard() {
+    const btn = document.getElementById('save-btn');
+    btn.ariaBusy = 'true';
+
+    const body = {
+        uid: cardUid,
+        type: selectedItem.type,
+        title: selectedItem.title,
+        library: selectedItem.library,
+    };
+    if (selectedItem.type === 'show') {
+        body.mode = document.getElementById('mode-select').value;
+    }
+
+    try {
+        const resp = await fetch('/api/cards', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (resp.ok) {
+            window.location.href = '/cards';
+        } else {
+            alert('Failed to save card');
+        }
+    } finally {
+        btn.ariaBusy = 'false';
+    }
+}
+</script>
+{% endblock %}

@@ -1,8 +1,6 @@
 """Interactive CLI to map NFC cards to Plex content."""
 
-import yaml
-
-from nfc_tv import CONFIG_PATH, load_config
+from nfc_tv import load_config, save_config
 from nfc_tv.nfc import NFCReader
 from plexapi.server import PlexServer
 
@@ -55,11 +53,6 @@ def _pick_show_mode():
     return "shuffle" if choice == "2" else "next"
 
 
-def _save_config(config):
-    with open(CONFIG_PATH, "w") as f:
-        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
-
-
 def main():
     config = load_config()
     server = _connect(config)
@@ -104,7 +97,7 @@ def main():
             entry["mode"] = _pick_show_mode()
 
         config["cards"][uid] = entry
-        _save_config(config)
+        save_config(config)
         print(f"Saved: {uid} -> {item.title}")
 
 

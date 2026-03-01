@@ -1,0 +1,22 @@
+.status-ok header {
+    color: var(--pico-color-green-500, #22c55e);
+}
+
+.status-err header {
+    color: var(--pico-color-red-500, #ef4444);
+}
+
+.search-result {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.search-result:hover {
+    opacity: 0.8;
+}
+
+.search-result small {
+    display: block;
+    margin-top: 0.25rem;
+}
